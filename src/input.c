@@ -19,6 +19,7 @@ int input_get_key(void)
 
 void input_restore(void)
 {
+
     nodelay(stdscr, FALSE);
     echo();
     nocbreak();
