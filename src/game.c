@@ -17,7 +17,6 @@ void game_init(void)
     g_score = 0;
     g_pipes = NULL;
 
-    // 初始化小鸟
     g_bird.y  = SCREEN_H / 2.0f;
     g_bird.vy = 0.0f;
     g_bird.frame = 0;
@@ -136,5 +135,5 @@ void save_highscore(void)
     {
         fprintf(fp, "%d", g_highscore);
         fclose(fp);
-    }
+    } 
 }

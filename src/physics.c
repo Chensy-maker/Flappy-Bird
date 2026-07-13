@@ -28,7 +28,7 @@ int check_collision(void)
     if (g_bird.y + BIRD_SIZE >= SCREEN_H - 2)
         return 1;
 
-    //碰撞顶部
+    //碰撞顶部边界
     if (g_bird.y <= 0)
         return 1;
 
