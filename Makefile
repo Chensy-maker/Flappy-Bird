@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -I include -Wall -g
-LDFLAGS = -lncurses
+LDFLAGS = -lSDL2 -lSDL2_image -lm
 SRC = src/main.c src/game.c src/render.c src/physics.c src/input.c
 OBJ = $(SRC:.c=.o)
 TARGET = flappy_bird

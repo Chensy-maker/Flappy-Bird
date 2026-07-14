@@ -1,3 +1,6 @@
+#include "game.h"
+#include "physics.h"
+#include "input.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -52,141 +55,124 @@ void game_free_pipes(void)
 
 void game_init(void)
 {
-    g_scene = SCENE_START;
-    g_score = 0;
-    g_pipes = NULL;
-    pipe_timer = 0;
-    g_input_jump = 0;
+g_scene = SCENE_START;
+g_score = 0;
+g_pipes = NULL;
+pipe_timer = 0;
 
-    // 重置小鸟位置速度
-    g_bird.y = SCREEN_H / 2.0f;
-    g_bird.vy = 0.0f;
-    g_bird.frame = 0;
+g_bird.y  = SCREEN_H / 2.0f;
+g_bird.vy = 0.0f;
+g_bird.frame = 0;
 
-    load_highscore();
+load_highscore();
 }
 
 void game_switch_scene(GameScene s)
 {
-    g_scene = s;
+g_scene = s;
 
-    // 切换到非游戏状态统一重置
-    if (s == SCENE_START || s == SCENE_READY || s == SCENE_OVER)
-    {
-        g_score = 0;
-        pipe_timer = 0;
-        game_free_pipes();
+if (s == SCENE_READY || s == SCENE_OVER) {
+g_score = 0;
+pipe_timer = 0;
 
-        g_bird.y = SCREEN_H / 2.0f;
-        g_bird.vy = 0.0f;
-        g_bird.frame = 0;
-    }
+// 清空所有管道
+game_free_pipes();
+
+// 重置小鸟
+g_bird.y = SCREEN_H / 2.0f;
+g_bird.vy = 0.0f;
+}
 }
 
 void game_update(void)
 {
-    // 每帧清空按键标记
-    g_input_jump = 0;
+int key = input_get_key();
 
-    SDL_Event e;
-    while (SDL_PollEvent(&e))
-    {
-        if (e.type == SDL_QUIT)
-        {
-            SDL_Quit();
-            exit(0);
-        }
-
-        // 空格跳跃
-        if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE && !e.key.repeat)
-        {
-            g_input_jump = 1;
-        }
-
-        // 鼠标左键跳跃
-        if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
-        {
-            g_input_jump = 1;
-        }
-    }
-
-    // 场景逻辑
-    switch (g_scene)
-    {
-        case SCENE_START:
-        {
-            if (g_input_jump)
-            {
-                game_switch_scene(SCENE_READY);
-            }
-            break;
-        }
-
-        case SCENE_READY:
-        {
-            
-            static float fly_dir = 0.05f;
-            g_bird.y += fly_dir;
-
-            if (g_bird.y > SCREEN_H / 2.0f + 3.0f) fly_dir = -0.05f;
-            if (g_bird.y < SCREEN_H / 2.0f - 3.0f) fly_dir = 0.05f;
-
-            g_bird.vy = 0.0f;
-
-            if (g_input_jump)
-            {
-                game_switch_scene(SCENE_GAME);
-            }
-            break;
-        }
-
-        case SCENE_GAME:
-        {
-            // 跳跃响应
-            if (g_input_jump)
-            {
-                bird_jump(&g_bird);
-            }
-
-            // 物理更新
-            bird_apply_gravity(&g_bird);
-
-            // 管道逻辑
-            move_pipes();
-            pipe_timer++;
-            if (pipe_timer >= PIPE_SPAWN_INTERVAL)
-            {
-                spawn_pipe();
-                pipe_timer = 0;
-            }
-
-            // 计分
-            if (check_score())
-            {
-                g_score++;
-            }
-
-            // 碰撞检测 & 游戏结束
-            if (check_collision())
-            {
-                if (g_score > g_highscore)
-                {
-                    g_highscore = g_score;
-                    save_highscore();
-                }
-                game_switch_scene(SCENE_OVER);
-            }
-
-            break;
-        }
-
-        case SCENE_OVER:
-        {
-            if (g_input_jump)
-            {
-                game_switch_scene(SCENE_READY);
-            }
-            break;
-        }
-    }
+switch (g_scene) {
+case SCENE_START:
+if (key == ' ' || key == '\r') {
+game_switch_scene(SCENE_READY);
 }
+break;
+
+case SCENE_READY:
+if (key == ' ') {
+game_switch_scene(SCENE_GAME);
+}
+break;
+
+case SCENE_GAME:
+// 跳跃
+if (key == ' ') {
+bird_jump(&g_bird);
+}
+
+// 重力和移动
+bird_apply_gravity(&g_bird);
+move_pipes();
+
+// 生成管道
+pipe_timer++;
+if (pipe_timer >= PIPE_SPAWN_INTERVAL) {
+spawn_pipe();
+pipe_timer = 0;
+}
+
+// 检查得分
+if (check_score()) {
+g_score++;
+}
+
+// 检查碰撞
+if (check_collision()) {
+game_switch_scene(SCENE_OVER);
+}
+break;
+
+case SCENE_OVER:
+// 更新最高分
+if (g_score > g_highscore) {
+g_highscore = g_score;
+save_highscore();
+}
+
+if (key == ' ' || key == '\r') {
+game_switch_scene(SCENE_START);
+}
+break;
+}
+}
+
+void game_free_pipes(void)
+{
+PipeList p = g_pipes, q;
+while (p != NULL) {
+q = p->next;
+free(p);
+p = q;
+}
+g_pipes = NULL;
+}
+
+void load_highscore(void)
+{
+FILE *fp = fopen("data/highscore.txt", "r");
+g_highscore = 0;
+if (fp != NULL) {
+fscanf(fp, "%d", &g_highscore);
+fclose(fp);
+}
+}
+
+void save_highscore(void)
+{
+// 确保data目录存在
+system("mkdir -p data");
+
+FILE *fp = fopen("data/highscore.txt", "w");
+if (fp != NULL) {
+fprintf(fp, "%d", g_highscore);
+fclose(fp);
+}
+}
+
