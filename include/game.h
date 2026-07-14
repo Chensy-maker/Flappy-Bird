@@ -19,6 +19,8 @@
 // ============ 物理配置 ============
 #define GRAVITY 0.5f         // 重力加速度
 #define MAX_FALL_SPEED 10.0f // 最大下落速度
+extern int g_input_jump; // 标记本帧是否触发跳跃/确认按键
+
 // ============ 游戏场景 ============
 typedef enum {
     SCENE_START,  // 开始界面
