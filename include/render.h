@@ -25,5 +25,8 @@ extern SDL_Texture  *tex_score_panel;
 extern SDL_Texture  *tex_new;
 extern SDL_Texture  *tex_tutorial;
 extern SDL_Texture  *tex_btn_pause;
+extern SDL_Texture  *tex_btn_resume;
+extern SDL_Texture  *tex_button_score;
+extern SDL_Texture  *tex_font_numbers[10];
 
 #endif

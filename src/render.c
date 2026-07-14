@@ -18,12 +18,16 @@ SDL_Texture  *tex_game_over   = NULL;
 SDL_Texture  *tex_numbers[10] = {NULL};
 SDL_Texture  *tex_score_panel = NULL;
 SDL_Texture  *tex_new         = NULL;
+SDL_Texture  *tex_btn_resume     = NULL;
+SDL_Texture  *tex_button_score   = NULL;
+SDL_Texture  *tex_font_numbers[10] = {NULL};
 
 /* ?????? */
 static int bg_w = 0, bg_h = 0;
 static int ground_w = 0, ground_h = 0;
 static int pipe_w = 0, pipe_h = 0;
 static int num_w = 0, num_h = 0;
+static int font_w = 0, font_h = 0;
 
 /* ============ ???? ============ */
 
@@ -75,6 +79,22 @@ static void draw_number_center(int number, int cx, int cy, int dw)
         if (d >= 0 && d <= 9 && tex_numbers[d]) {
             SDL_Rect dest = {sx + i * dw, cy - num_h / 2, dw, num_h};
             SDL_RenderCopy(g_renderer, tex_numbers[d], NULL, &dest);
+        }
+    }
+}
+
+static void draw_font_number_center(int number, int cx, int cy, int dw)
+{
+    if (number < 0) number = 0;
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", number);
+    int len = (int)strlen(buf);
+    int sx = cx - (len * dw) / 2;
+    for (int i = 0; i < len; i++) {
+        int d = buf[i] - '0';
+        if (d >= 0 && d <= 9 && tex_font_numbers[d]) {
+            SDL_Rect dest = {sx + i * dw, cy - font_h / 2, dw, font_h};
+            SDL_RenderCopy(g_renderer, tex_font_numbers[d], NULL, &dest);
         }
     }
 }
@@ -134,15 +154,15 @@ static void draw_pipe_top(float px, int gap_top)
     if (gap_top <= PIPE_HEAD_H) {
         SDL_Rect src  = {0, pipe_h - gap_top, pipe_w, gap_top};
         SDL_Rect dest = {(int)px, 0, pipe_w, gap_top};
-        SDL_RenderCopy(g_renderer, tex_pipe_down, &src, &dest);
+        SDL_RenderCopyEx(g_renderer, tex_pipe_down, &src, &dest, 180.0, NULL, SDL_FLIP_NONE);
     } else {
         SDL_Rect sb = {0, 0, pipe_w, body_src_h};
         SDL_Rect db = {(int)px, 0, pipe_w, gap_top - PIPE_HEAD_H};
-        SDL_RenderCopy(g_renderer, tex_pipe_down, &sb, &db);
+        SDL_RenderCopyEx(g_renderer, tex_pipe_down, &sb, &db, 180.0, NULL, SDL_FLIP_NONE);
 
         SDL_Rect sh = {0, pipe_h - PIPE_HEAD_H, pipe_w, PIPE_HEAD_H};
         SDL_Rect dh = {(int)px, gap_top - PIPE_HEAD_H, pipe_w, PIPE_HEAD_H};
-        SDL_RenderCopy(g_renderer, tex_pipe_down, &sh, &dh);
+        SDL_RenderCopyEx(g_renderer, tex_pipe_down, &sh, &dh, 180.0, NULL, SDL_FLIP_NONE);
     }
 }
 
@@ -217,6 +237,16 @@ static void draw_start_ui(void)
         if (num_h <= 0) { num_w = 20; num_h = 28; }
         draw_number_center(g_highscore, SCREEN_W / 2, SCREEN_H / 2 + 40, num_w);
     }
+    if (tex_button_score) {
+        Uint32 ticks = SDL_GetTicks();
+        float y_offset = (float)sin(ticks * 0.003) * 5.0f;
+        int sw = 0, sh = 0;
+        SDL_QueryTexture(tex_button_score, NULL, NULL, &sw, &sh);
+        if (sw <= 0) { sw = 120; sh = 40; }
+        int num_display_h = num_h > 0 ? num_h : 28;
+        int by = SCREEN_H / 2 + 40 + num_display_h/2 + sh/2 + 10 + (int)y_offset;
+        draw_centered(tex_button_score, SCREEN_W / 2, by, sw, sh);
+    }
 }
 
 static void draw_ready_ui(void)
@@ -233,12 +263,21 @@ static void draw_ready_ui(void)
     }
 }
 
+static void draw_pause_ui(void)
+{
+    if (!tex_btn_resume) return;
+    int bw = 0, bh = 0;
+    SDL_QueryTexture(tex_btn_resume, NULL, NULL, &bw, &bh);
+    if (bw <= 0) { bw = 80; bh = 80; }
+    draw_centered(tex_btn_resume, SCREEN_W / 2, SCREEN_H / 2, bw, bh);
+}
+
 static void draw_score_ui(void)
 {
-    if (!tex_numbers[0]) return;
-    if (num_h == 0) get_tex_size(tex_numbers[0], &num_w, &num_h);
-    if (num_h <= 0) { num_w = 24; num_h = 36; }
-    draw_number_center(g_score, SCREEN_W / 2, 55, num_w);
+    if (!tex_font_numbers[0]) return;
+    if (font_h == 0) get_tex_size(tex_font_numbers[0], &font_w, &font_h);
+    if (font_h <= 0) { font_w = 24; font_h = 36; }
+    draw_font_number_center(g_score, SCREEN_W / 2, 55, font_w);
 }
 
 static void draw_over_ui(void)
@@ -260,7 +299,7 @@ static void draw_over_ui(void)
         if (num_h <= 0) { num_w = 20; num_h = 28; }
 
         int sy = SCREEN_H / 3 + 40 + ph / 2 - 30;
-        int hy = SCREEN_H / 3 + 40 + ph / 2 + 5;
+        int hy = SCREEN_H / 3 + 40 + ph / 2 + 35;
         draw_number_right(g_score, cx + pw / 2 - 20, sy, num_w);
         draw_number_right(g_highscore, cx + pw / 2 - 20, hy, num_w);
 
@@ -291,7 +330,7 @@ void render_draw(void)
     switch (g_scene) {
     case SCENE_START: draw_start_ui(); break;
     case SCENE_READY: draw_ready_ui(); draw_score_ui(); break;
-    case SCENE_GAME:  draw_score_ui(); break;
+    case SCENE_GAME:  draw_score_ui(); if (g_paused) draw_pause_ui(); break;
     case SCENE_OVER:  draw_over_ui(); break;
     }
 
@@ -354,6 +393,13 @@ int render_init(void)
         tex_numbers[i] = load_tex(path);
     }
 
+    tex_btn_resume   = load_tex("assets/images/button_resume.png");
+    tex_button_score = load_tex("assets/images/button_score.png");
+    for (int i = 0; i < 10; i++) {
+        snprintf(path, sizeof(path), "assets/images/font_%03d.png", 48 + i);
+        tex_font_numbers[i] = load_tex(path);
+    }
+
     return 0;
 }
 
@@ -363,6 +409,11 @@ void render_quit(void)
         if (tex_bird[i]) SDL_DestroyTexture(tex_bird[i]);
     for (int i = 0; i < 10; i++)
         if (tex_numbers[i]) SDL_DestroyTexture(tex_numbers[i]);
+
+    if (tex_btn_resume)     SDL_DestroyTexture(tex_btn_resume);
+    if (tex_button_score)   SDL_DestroyTexture(tex_button_score);
+    for (int i = 0; i < 10; i++)
+        if (tex_font_numbers[i]) SDL_DestroyTexture(tex_font_numbers[i]);
 
     if (tex_bg)          SDL_DestroyTexture(tex_bg);
     if (tex_ground)      SDL_DestroyTexture(tex_ground);

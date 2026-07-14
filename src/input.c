@@ -39,6 +39,14 @@ void input_process_events(void)
             default: break;
             }
             break;
+        case SDL_MOUSEBUTTONDOWN:
+            if (e.button.button == SDL_BUTTON_LEFT)
+                space_down = true;
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if (e.button.button == SDL_BUTTON_LEFT)
+                space_down = false;
+            break;
         }
     }
 }
