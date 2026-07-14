@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 GameScene g_scene;
 Bird      g_bird;
@@ -13,6 +14,9 @@ int       g_score;
 int       g_highscore;
 int       g_countdown;
 int       g_running;
+int       g_paused = 0;
+int       g_bird_color = 0;
+int       g_is_night = 0;
 float     g_bg_offset;
 float     g_ground_offset;
 SDL_Renderer *g_renderer = NULL;
@@ -24,6 +28,11 @@ static float float_t = 0;
 
 void game_init(void)
 {
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    int hour = tm->tm_hour;
+    g_is_night = (hour >= 19 || hour < 6) ? 1 : 0;
+
     g_scene = SCENE_START;
     g_score = 0;
     g_pipes = NULL;
@@ -33,6 +42,8 @@ void game_init(void)
     float_t = 0;
     g_bg_offset = 0.0f;
     g_ground_offset = 0.0f;
+    g_bird_color = 0;
+    g_paused = 0;
 
     g_bird.y = BIRD_BODY_Y;
     g_bird.vy = 0.0f;
@@ -72,6 +83,7 @@ void game_switch_scene(GameScene s)
 
     if (s == SCENE_READY) {
         g_score = 0;
+        g_paused = 0;
         pipe_timer = 0;
         ready_timer = 0;
         g_bird.y = BIRD_BODY_Y;
@@ -84,6 +96,7 @@ void game_switch_scene(GameScene s)
         g_bird.y = BIRD_BODY_Y;
         g_bird.vy = 0.0f;
         g_bird.frame = 1;
+        g_paused = 0;
         game_free_pipes();
         g_score = 0;
     }
@@ -103,6 +116,15 @@ void game_update(void)
         if (anim_counter >= 8) {
             anim_counter = 0;
             g_bird.frame = (g_bird.frame + 1) % 3;
+        }
+
+        if (input_left_triggered()) {
+            g_bird_color = (g_bird_color + 2) % 3;
+            audio_play_swoosh();
+        }
+        if (input_right_triggered()) {
+            g_bird_color = (g_bird_color + 1) % 3;
+            audio_play_swoosh();
         }
 
         if (input_space_triggered()) {
@@ -142,8 +164,14 @@ void game_update(void)
     }
 
     case SCENE_GAME: {
+        if (input_pause_triggered()) {
+            g_paused = !g_paused;
+        }
+
         g_bg_offset -= BG_SCROLL_SPEED;
         g_ground_offset -= GROUND_SCROLL_SPEED;
+
+        if (g_paused) break;
 
         anim_counter++;
         if (anim_counter >= 5) {

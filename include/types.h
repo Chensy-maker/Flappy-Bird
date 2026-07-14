@@ -11,7 +11,7 @@
 #define BIRD_X         150
 #define BIRD_W         34
 #define BIRD_H         24
-#define BIRD_JUMP_VEL  -8.0f
+#define BIRD_JUMP_VEL  -9.0f
 #define BIRD_BODY_Y    300
 
 #define PIPE_WIDTH      52
@@ -21,7 +21,7 @@
 #define PIPE_MIN_HEIGHT 100
 #define PIPE_HEAD_H     26
 
-#define GRAVITY         0.5f
+#define GRAVITY         0.55f
 #define MAX_FALL_SPEED  10.0f
 
 #define BG_SCROLL_SPEED 0.5f
@@ -53,3 +53,4 @@ typedef struct {
 } Rect;
 
 #endif
+

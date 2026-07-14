@@ -11,6 +11,9 @@ extern int       g_score;
 extern int       g_highscore;
 extern int       g_countdown;
 extern int       g_running;
+extern int       g_paused;
+extern int       g_bird_color;
+extern int       g_is_night;
 extern float     g_bg_offset;
 extern float     g_ground_offset;
 
