@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <SDL2/SDL.h>
-#include "game.h"
-#include "bird.h"
-#include "pipe.h"
 
 GameScene g_scene;
 Bird      g_bird;
@@ -31,7 +28,8 @@ void load_highscore(void)
 
 void save_highscore(void)
 {
-    
+    // 确保data目录存在
+    system("mkdir -p data");
     FILE *fp = fopen("data/highscore.txt", "w");
     if (fp != NULL)
     {
@@ -39,7 +37,6 @@ void save_highscore(void)
         fclose(fp);
     }
 }
-
 
 void game_free_pipes(void)
 {
@@ -140,39 +137,6 @@ if (key == ' ' || key == '\r') {
 game_switch_scene(SCENE_START);
 }
 break;
-}
-}
-
-void game_free_pipes(void)
-{
-PipeList p = g_pipes, q;
-while (p != NULL) {
-q = p->next;
-free(p);
-p = q;
-}
-g_pipes = NULL;
-}
-
-void load_highscore(void)
-{
-FILE *fp = fopen("data/highscore.txt", "r");
-g_highscore = 0;
-if (fp != NULL) {
-fscanf(fp, "%d", &g_highscore);
-fclose(fp);
-}
-}
-
-void save_highscore(void)
-{
-// 确保data目录存在
-system("mkdir -p data");
-
-FILE *fp = fopen("data/highscore.txt", "w");
-if (fp != NULL) {
-fprintf(fp, "%d", g_highscore);
-fclose(fp);
 }
 }
 
