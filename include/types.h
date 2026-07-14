@@ -13,7 +13,7 @@
 
 // ============ 管道配置 ============
 #define PIPE_WIDTH 52
-#define PIPE_GAP 150
+#define PIPE_GAP 250
 #define PIPE_SPEED 3.2f       
 #define PIPE_SPAWN_INTERVAL 65// 
 #define PIPE_MIN_HEIGHT 100
