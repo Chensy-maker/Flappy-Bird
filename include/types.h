@@ -10,18 +10,18 @@
 #define BIRD_X 150
 #define BIRD_W 34
 #define BIRD_H 24
-#define BIRD_JUMP_VEL -8.0f
+#define BIRD_JUMP_VEL -9.0f   
 
 // ============ 管道配置 ============
 #define PIPE_WIDTH 52
 #define PIPE_GAP 150
-#define PIPE_SPEED 2.0f
-#define PIPE_SPAWN_INTERVAL 90
+#define PIPE_SPEED 3.2f       
+#define PIPE_SPAWN_INTERVAL 65// 
 #define PIPE_MIN_HEIGHT 100
 #define PIPE_MAX_HEIGHT 400
 
 // ============ 物理配置 ============
-#define GRAVITY 0.5f
+#define GRAVITY 0.6f          
 #define MAX_FALL_SPEED 10.0f
 
 // ============ 矩形结构 ============

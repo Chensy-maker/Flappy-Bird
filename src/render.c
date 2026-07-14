@@ -73,8 +73,7 @@ SDL_Quit();
 return -1;
 }
 
-g_renderer = SDL_CreateRenderer(g_window, -1,
-SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
 
 if (!g_renderer) {
 fprintf(stderr, "Renderer creation failed: %s\n", SDL_GetError());
