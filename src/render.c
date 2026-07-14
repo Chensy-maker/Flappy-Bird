@@ -1,16 +1,16 @@
+
 #include "render.h"
 #include "game.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 
-#define SCREEN_WIDTH  288
-#define SCREEN_HEIGHT 512
+
 #define ASSETS_PATH   "assets/images/"
 
 // ============ SDL核心 ============
-static SDL_Window   *g_window   = NULL;
-static SDL_Renderer *g_renderer = NULL;
+SDL_Window   *g_window   = NULL;
+SDL_Renderer *g_renderer = NULL;
 
 // ============ 纹理资源 ============
 static SDL_Texture *tex_bg_day       = NULL;
@@ -62,8 +62,8 @@ g_window = SDL_CreateWindow(
 "Flappy Bird",
 SDL_WINDOWPOS_CENTERED,
 SDL_WINDOWPOS_CENTERED,
-SCREEN_WIDTH * 2, SCREEN_HEIGHT,
-SDL_WINDOW_SHOWN
+SCREEN_WIDTH, SCREEN_HEIGHT,
+SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 );
 
 if (!g_window) {
@@ -85,6 +85,11 @@ return -1;
 }
 
 SDL_RenderSetLogicalSize(g_renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+
+// 可选：限制窗口最小尺寸，防止缩到过小看不见内容
+SDL_SetWindowMinimumSize(g_window, SCREEN_WIDTH, SCREEN_HEIGHT);
+
 
 tex_bg_day = load_texture("bg_day.png");
 tex_land = load_texture("land.png");
