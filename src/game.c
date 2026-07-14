@@ -2,6 +2,7 @@
 #include "physics.h"
 #include "input.h"
 #include "audio.h"
+#include "render.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -127,7 +128,7 @@ void game_update(void)
             audio_play_swoosh();
         }
 
-        if (input_space_triggered()) {
+        if (input_click_triggered()) {
             audio_play_swoosh();
             game_switch_scene(SCENE_READY);
         }
@@ -156,7 +157,7 @@ void game_update(void)
             if (g_countdown < 1) g_countdown = 1;
         }
 
-        if (input_space_triggered()) {
+        if (input_click_triggered()) {
             audio_play_swoosh();
             g_scene = SCENE_GAME;
         }
@@ -164,52 +165,75 @@ void game_update(void)
     }
 
     case SCENE_GAME: {
-        if (input_pause_triggered()) {
+        /* 空格 / P / PAUSE → 切换暂停 */
+        if (input_space_triggered() || input_pause_triggered()) {
             g_paused = !g_paused;
         }
 
-        g_bg_offset -= BG_SCROLL_SPEED;
-        g_ground_offset -= GROUND_SCROLL_SPEED;
+        if (g_paused) {
+            /* 暂停时：背景和地面慢速滚动，其余全部冻结 */
+            g_bg_offset -= BG_SCROLL_SPEED * PAUSE_SCROLL_FACTOR;
+            g_ground_offset -= GROUND_SCROLL_SPEED * PAUSE_SCROLL_FACTOR;
+        } else {
+            g_bg_offset -= BG_SCROLL_SPEED;
+            g_ground_offset -= GROUND_SCROLL_SPEED;
 
-        if (g_paused) break;
-
-        anim_counter++;
-        if (anim_counter >= 5) {
-            anim_counter = 0;
-            g_bird.frame++;
-            if (g_bird.frame > 2) g_bird.frame = 0;
-        }
-
-        bird_apply_gravity(&g_bird);
-
-        if (input_space_triggered()) {
-            bird_jump(&g_bird);
-            audio_play_wing();
-        }
-
-        pipe_timer++;
-        if (pipe_timer >= PIPE_SPAWN_INTERVAL) {
-            pipe_timer = 0;
-            spawn_pipe();
-        }
-
-        move_pipes();
-        game_cleanup_offscreen_pipes();
-
-        if (check_collision()) {
-            audio_play_hit();
-            audio_play_die();
-            if (g_score > g_highscore) {
-                g_highscore = g_score;
-                save_highscore();
+            anim_counter++;
+            if (anim_counter >= 5) {
+                anim_counter = 0;
+                g_bird.frame++;
+                if (g_bird.frame > 2) g_bird.frame = 0;
             }
-            g_scene = SCENE_OVER;
-            break;
+
+            bird_apply_gravity(&g_bird);
+
+            pipe_timer++;
+            if (pipe_timer >= PIPE_SPAWN_INTERVAL) {
+                pipe_timer = 0;
+                spawn_pipe();
+            }
+
+            move_pipes();
+            game_cleanup_offscreen_pipes();
+
+            if (check_collision()) {
+                audio_play_hit();
+                audio_play_die();
+                if (g_score > g_highscore) {
+                    g_highscore = g_score;
+                    save_highscore();
+                }
+                g_scene = SCENE_OVER;
+                break;
+            }
+
+            if (check_score()) {
+                g_score++;
+                audio_play_point();
+            }
         }
 
-        if (check_score()) {
-            g_score++;
-            audio_play_point();
+        /* 鼠标点击处理 */
+        if (input_click_triggered()) {
+            if (g_paused) {
+                /* 暂停时：点击中间继续按钮区域 → 恢复 */
+                int rx = SCREEN_W / 2 - RESUME_BTN_W / 2;
+                int ry = SCREEN_H / 2 - RESUME_BTN_H / 2;
+                if (click_x >= rx && click_x <= rx + RESUME_BTN_W &&
+                    click_y >= ry && click_y <= ry + RESUME_BTN_H) {
+                    g_paused = 0;
+                }
+            } else {
+                /* 运行中：点击左上角暂停按钮 → 暂停 */
+                if (click_x >= PAUSE_BTN_X && click_x <= PAUSE_BTN_X + PAUSE_BTN_W &&
+                    click_y >= PAUSE_BTN_Y && click_y <= PAUSE_BTN_Y + PAUSE_BTN_H) {
+                    g_paused = 1;
+                } else {
+                    /* 点击其他区域 → 小鸟跳跃 */
+                    bird_jump(&g_bird);
+                    audio_play_wing();
+                }
+            }
         }
         break;
     }
@@ -223,7 +247,7 @@ void game_update(void)
             g_bird.y = (float)(SCREEN_H - GROUND_HEIGHT - BIRD_H);
         }
 
-        if (input_space_triggered()) {
+        if (input_click_triggered()) {
             audio_play_swoosh();
             game_switch_scene(SCENE_START);
         }

@@ -7,9 +7,13 @@
 void input_process_events(void);
 bool input_space_pressed(void);
 bool input_space_triggered(void);
+bool input_click_triggered(void);
 bool input_left_triggered(void);
 bool input_right_triggered(void);
 bool input_pause_triggered(void);
 bool input_quit_requested(void);
+
+extern int click_x;
+extern int click_y;
 
 #endif

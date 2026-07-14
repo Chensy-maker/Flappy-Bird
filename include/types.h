@@ -26,6 +26,15 @@
 
 #define BG_SCROLL_SPEED 0.5f
 #define GROUND_SCROLL_SPEED 2.0f
+/* ---------- ÔÝÍ£ / ¼ÌÐø °´Å¥ ---------- */
+#define PAUSE_BTN_X     10
+#define PAUSE_BTN_Y     10
+#define PAUSE_BTN_W     40
+#define PAUSE_BTN_H     40
+#define RESUME_BTN_W    80
+#define RESUME_BTN_H    40
+#define PAUSE_SCROLL_FACTOR 0.3f
+
 
 typedef enum {
     SCENE_START,

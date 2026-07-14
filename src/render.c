@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 
-/* ============ ?????? ============ */
+/* ============ 全局纹理 ============ */
 SDL_Window   *g_window        = NULL;
 SDL_Texture  *tex_bg          = NULL;
 SDL_Texture  *tex_ground      = NULL;
@@ -15,21 +15,23 @@ SDL_Texture  *tex_pipe_up     = NULL;
 SDL_Texture  *tex_title       = NULL;
 SDL_Texture  *tex_ready       = NULL;
 SDL_Texture  *tex_game_over   = NULL;
+SDL_Texture  *tex_tutorial    = NULL;
+SDL_Texture  *tex_btn_pause   = NULL;
+SDL_Texture  *tex_btn_resume  = NULL;
 SDL_Texture  *tex_numbers[10] = {NULL};
 SDL_Texture  *tex_score_panel = NULL;
 SDL_Texture  *tex_new         = NULL;
-SDL_Texture  *tex_btn_resume     = NULL;
 SDL_Texture  *tex_button_score   = NULL;
 SDL_Texture  *tex_font_numbers[10] = {NULL};
 
-/* ?????? */
+/* 尺寸缓存 */
 static int bg_w = 0, bg_h = 0;
 static int ground_w = 0, ground_h = 0;
 static int pipe_w = 0, pipe_h = 0;
 static int num_w = 0, num_h = 0;
 static int font_w = 0, font_h = 0;
 
-/* ============ ???? ============ */
+/* ============ 工具函数 ============ */
 
 static SDL_Texture *load_tex(const char *path)
 {
@@ -99,7 +101,7 @@ static void draw_font_number_center(int number, int cx, int cy, int dw)
     }
 }
 
-/* ============ ???? ============ */
+/* ============ 场景元素绘制 ============ */
 
 static void draw_background(void)
 {
@@ -223,18 +225,15 @@ static void draw_bird(void)
     SDL_RenderCopy(g_renderer, tex, NULL, &dest);
 }
 
-/* ============ UI?? ============ */
+/* ============ UI 绘制 ============ */
 
 static void draw_start_ui(void)
 {
     if (tex_title) {
     int tw = 178, th = 48;
     SDL_QueryTexture(tex_title, NULL, NULL, &tw, &th);
-    // 获取系统毫秒时间，用正弦函数计算上下偏移
     Uint32 tick = SDL_GetTicks();
-    // 0.003控制速度，8是上下最大浮动像素，可自行修改
     float offset_y = sinf(tick * 0.003f) * 8.0f;
-    // 基准Y：SCREEN_H / 3，叠加动态偏移
     int title_y = (int)(SCREEN_H / 3 + offset_y);
     draw_centered(tex_title, SCREEN_W / 2, title_y, tw, th);
 }
@@ -267,14 +266,47 @@ static void draw_ready_ui(void)
         if (num_h <= 0) { num_w = 36; num_h = 48; }
         draw_number_center(g_countdown, SCREEN_W / 2, SCREEN_H / 4 + 70, num_w);
     }
+    /* --- 倒计时下方：教程图片，上下律动 --- */
+    if (tex_tutorial) {
+        Uint32 tick = SDL_GetTicks();
+        float y_offset = sinf(tick * 0.003f) * 8.0f;
+        int tw = 0, th = 0;
+        SDL_QueryTexture(tex_tutorial, NULL, NULL, &tw, &th);
+        if (tw <= 0) { tw = 80; th = 80; }
+        /* 定位在倒计时数字下方约 20px */
+        int count_h = (num_h > 0) ? num_h : 48;
+        int ty = SCREEN_H / 4 + 70 + count_h / 2 + 20 + th / 2 + (int)y_offset;
+        draw_centered(tex_tutorial, SCREEN_W / 2, ty, tw, th);
+    }
 }
 
-static void draw_pause_ui(void)
+static void draw_pause_overlay(void)
+{
+    /* 半透明黑遮罩 */
+    SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 128);
+    SDL_Rect overlay = {0, 0, SCREEN_W, SCREEN_H};
+    SDL_RenderFillRect(g_renderer, &overlay);
+    SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_NONE);
+}
+
+static void draw_pause_button(void)
+{
+    if (!tex_btn_pause) return;
+    int pw = PAUSE_BTN_W, ph = PAUSE_BTN_H;
+    int rw = 0, rh = 0;
+    SDL_QueryTexture(tex_btn_pause, NULL, NULL, &rw, &rh);
+    if (rw > 0) { pw = rw; ph = rh; }
+    SDL_Rect dest = {PAUSE_BTN_X, PAUSE_BTN_Y, pw, ph};
+    SDL_RenderCopy(g_renderer, tex_btn_pause, NULL, &dest);
+}
+
+static void draw_resume_button(void)
 {
     if (!tex_btn_resume) return;
     int bw = 0, bh = 0;
     SDL_QueryTexture(tex_btn_resume, NULL, NULL, &bw, &bh);
-    if (bw <= 0) { bw = 80; bh = 80; }
+    if (bw <= 0) { bw = RESUME_BTN_W; bh = RESUME_BTN_H; }
     draw_centered(tex_btn_resume, SCREEN_W / 2, SCREEN_H / 2, bw, bh);
 }
 
@@ -321,7 +353,7 @@ static void draw_over_ui(void)
     }
 }
 
-/* ============ ????? ============ */
+/* ============ 主绘制 ============ */
 
 void render_draw(void)
 {
@@ -336,14 +368,21 @@ void render_draw(void)
     switch (g_scene) {
     case SCENE_START: draw_start_ui(); break;
     case SCENE_READY: draw_ready_ui(); draw_score_ui(); break;
-    case SCENE_GAME:  draw_score_ui(); if (g_paused) draw_pause_ui(); break;
+    case SCENE_GAME:
+        draw_score_ui();
+        draw_pause_button();          /* 左上角暂停按钮 */
+        if (g_paused) {
+            draw_pause_overlay();     /* 半透明黑遮罩 */
+            draw_resume_button();     /* 中间继续按钮 */
+        }
+        break;
     case SCENE_OVER:  draw_over_ui(); break;
     }
 
     SDL_RenderPresent(g_renderer);
 }
 
-/* ============ ?????? ============ */
+/* ============ 初始化 ============ */
 
 int render_init(void)
 {
@@ -390,6 +429,8 @@ int render_init(void)
     tex_title     = load_tex("assets/images/title.png");
     tex_ready     = load_tex("assets/images/text_ready.png");
     tex_game_over = load_tex("assets/images/text_game_over.png");
+    tex_tutorial  = load_tex("assets/images/tutorial.png");
+    tex_btn_pause = load_tex("assets/images/button_pause.png");
     tex_score_panel = load_tex("assets/images/score_panel.png");
     tex_new       = load_tex("assets/images/new.png");
 
@@ -416,11 +457,13 @@ void render_quit(void)
     for (int i = 0; i < 10; i++)
         if (tex_numbers[i]) SDL_DestroyTexture(tex_numbers[i]);
 
-    if (tex_btn_resume)     SDL_DestroyTexture(tex_btn_resume);
-    if (tex_button_score)   SDL_DestroyTexture(tex_button_score);
+    if (tex_btn_pause)    SDL_DestroyTexture(tex_btn_pause);
+    if (tex_btn_resume)   SDL_DestroyTexture(tex_btn_resume);
+    if (tex_button_score) SDL_DestroyTexture(tex_button_score);
     for (int i = 0; i < 10; i++)
         if (tex_font_numbers[i]) SDL_DestroyTexture(tex_font_numbers[i]);
 
+    if (tex_tutorial)    SDL_DestroyTexture(tex_tutorial);
     if (tex_bg)          SDL_DestroyTexture(tex_bg);
     if (tex_ground)      SDL_DestroyTexture(tex_ground);
     if (tex_pipe_down)   SDL_DestroyTexture(tex_pipe_down);
