@@ -24,7 +24,7 @@ SDL_Renderer *g_renderer = NULL;
 static int pipe_timer = 0;
 static int ready_timer = 0;
 static int anim_counter = 0;
-static float float_t = 0;
+static float frame_t = 0;
 
 void game_init(void)
 {
@@ -39,7 +39,7 @@ void game_init(void)
     pipe_timer = 0;
     ready_timer = 0;
     anim_counter = 0;
-    float_t = 0;
+    frame_t = 0;
     g_bg_offset = 0.0f;
     g_ground_offset = 0.0f;
     g_bird_color = 0;
@@ -109,8 +109,8 @@ void game_update(void)
         g_bg_offset -= BG_SCROLL_SPEED;
         g_ground_offset -= GROUND_SCROLL_SPEED;
 
-        float_t += 0.05f;
-        g_bird.y = BIRD_BODY_Y + (float)sin(float_t) * 5.0f;
+        frame_t += 0.05f;
+        g_bird.y = BIRD_BODY_Y + (float)sin(frame_t) * 5.0f;
 
         anim_counter++;
         if (anim_counter >= 8) {
@@ -138,8 +138,8 @@ void game_update(void)
         g_bg_offset -= BG_SCROLL_SPEED;
         g_ground_offset -= GROUND_SCROLL_SPEED;
 
-        float_t += 0.05f;
-        g_bird.y = BIRD_BODY_Y + (float)sin(float_t) * 5.0f;
+        frame_t += 0.05f;
+        g_bird.y = BIRD_BODY_Y + (float)sin(frame_t) * 5.0f;
 
         anim_counter++;
         if (anim_counter >= 8) {
