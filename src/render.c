@@ -9,7 +9,7 @@
 SDL_Window   *g_window        = NULL;
 SDL_Texture  *tex_bg          = NULL;
 SDL_Texture  *tex_ground      = NULL;
-SDL_Texture  *tex_bird[3]     = {NULL, NULL, NULL};
+SDL_Texture  *tex_bird[9]     = {NULL, NULL, NULL};
 SDL_Texture  *tex_pipe_down   = NULL;
 SDL_Texture  *tex_pipe_up     = NULL;
 SDL_Texture  *tex_title       = NULL;
@@ -228,14 +228,20 @@ static void draw_bird(void)
 static void draw_start_ui(void)
 {
     if (tex_title) {
-        int tw = 178, th = 48;
-        SDL_QueryTexture(tex_title, NULL, NULL, &tw, &th);
-        draw_centered(tex_title, SCREEN_W / 2, SCREEN_H / 3, tw, th);
-    }
+    int tw = 178, th = 48;
+    SDL_QueryTexture(tex_title, NULL, NULL, &tw, &th);
+    // 获取系统毫秒时间，用正弦函数计算上下偏移
+    Uint32 tick = SDL_GetTicks();
+    // 0.003控制速度，8是上下最大浮动像素，可自行修改
+    float offset_y = sinf(tick * 0.003f) * 8.0f;
+    // 基准Y：SCREEN_H / 3，叠加动态偏移
+    int title_y = (int)(SCREEN_H / 3 + offset_y);
+    draw_centered(tex_title, SCREEN_W / 2, title_y, tw, th);
+}
     if (g_highscore > 0 && tex_numbers[0]) {
         if (num_h == 0) get_tex_size(tex_numbers[0], &num_w, &num_h);
         if (num_h <= 0) { num_w = 20; num_h = 28; }
-        draw_number_center(g_highscore, SCREEN_W / 2, SCREEN_H / 2 + 40, num_w);
+        draw_number_center(g_highscore, SCREEN_W / 2, SCREEN_H / 2 -10, num_w);
     }
     if (tex_button_score) {
         Uint32 ticks = SDL_GetTicks();
@@ -244,7 +250,7 @@ static void draw_start_ui(void)
         SDL_QueryTexture(tex_button_score, NULL, NULL, &sw, &sh);
         if (sw <= 0) { sw = 120; sh = 40; }
         int num_display_h = num_h > 0 ? num_h : 28;
-        int by = SCREEN_H / 2 + 40 + num_display_h/2 + sh/2 + 10 + (int)y_offset;
+        int by = SCREEN_H / 2  + num_display_h/2 + sh/2  + (int)y_offset;
         draw_centered(tex_button_score, SCREEN_W / 2, by, sw, sh);
     }
 }
@@ -298,10 +304,10 @@ static void draw_over_ui(void)
             get_tex_size(tex_numbers[0], &num_w, &num_h);
         if (num_h <= 0) { num_w = 20; num_h = 28; }
 
-        int sy = SCREEN_H / 3 + 40 + ph / 2 - 30;
-        int hy = SCREEN_H / 3 + 40 + ph / 2 + 35;
-        draw_number_right(g_score, cx + pw / 2 - 20, sy, num_w);
-        draw_number_right(g_highscore, cx + pw / 2 - 20, hy, num_w);
+        int sy = SCREEN_H / 3 + 40 + ph / 2 - 20;
+        int hy = SCREEN_H / 3 + 40 + ph / 2 + 30;
+        draw_number_right(g_score, cx + pw / 2 - 25, sy, num_w);
+        draw_number_right(g_highscore, cx + pw / 2 - 25, hy, num_w);
 
         if (g_score > 0 && g_score >= g_highscore && tex_new) {
             int nw = 32, nh = 20;
