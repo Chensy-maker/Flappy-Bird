@@ -218,7 +218,12 @@ static void draw_bird(void)
 {
     int frame = g_bird.frame;
     if (frame < 0 || frame > 2) frame = 1;
-    SDL_Texture *tex = tex_bird[frame];
+    // 根据颜色+帧计算纹理下标
+    int bird_idx = g_bird_color * 3 + frame;
+    // 边界保护，防止越界
+    if (bird_idx < 0 || bird_idx >= 9) bird_idx = frame;
+    SDL_Texture *tex = tex_bird[bird_idx];
+
     if (!tex) return;
 
     SDL_Rect dest = {(int)BIRD_X, (int)g_bird.y, BIRD_W, BIRD_H};
@@ -424,6 +429,12 @@ int render_init(void)
     tex_bird[0]   = load_tex("assets/images/bird0_0.png");
     tex_bird[1]   = load_tex("assets/images/bird0_1.png");
     tex_bird[2]   = load_tex("assets/images/bird0_2.png");
+    tex_bird[3]   = load_tex("assets/images/bird1_0.png");
+    tex_bird[4]   = load_tex("assets/images/bird1_1.png");
+    tex_bird[5]   = load_tex("assets/images/bird1_2.png");
+    tex_bird[6]   = load_tex("assets/images/bird2_0.png");
+    tex_bird[7]   = load_tex("assets/images/bird2_1.png");
+    tex_bird[8]   = load_tex("assets/images/bird2_2.png");
     tex_pipe_down = load_tex("assets/images/pipe_down.png");
     tex_pipe_up   = load_tex("assets/images/pipe_up.png");
     tex_title     = load_tex("assets/images/title.png");
@@ -452,7 +463,7 @@ int render_init(void)
 
 void render_quit(void)
 {
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 9; i++)
         if (tex_bird[i]) SDL_DestroyTexture(tex_bird[i]);
     for (int i = 0; i < 10; i++)
         if (tex_numbers[i]) SDL_DestroyTexture(tex_numbers[i]);
