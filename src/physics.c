@@ -79,7 +79,7 @@ int check_score(void)
 {
     Pipe *p = g_pipes;
     while (p) {
-        if (!p->scored && p->x + PIPE_WIDTH < BIRD_X) {
+        if (!p->scored && p->x + PIPE_WIDTH /2 < BIRD_X + BIRD_W / 2) {
             p->scored = 1;
             return 1;
         }
