@@ -5,12 +5,15 @@
 #include <SDL2/SDL.h>
 
 extern GameScene g_scene;//当前游戏场景
-extern Bird      g_bird;//当前小鸟的状态
+extern Bird      g_bird;//当前小鸟的状态/
 extern PipeList  g_pipes;//当前所有管道的链表头指针
 extern int       g_score;//当前游戏分数
 extern int       g_highscore;//历史最高分
 extern int       g_countdown;//倒计时计数器，游戏开始前的倒计时
-extern int       g_running;//游戏主循环是否继续运行的标记，0
+extern int       g_running;//游戏主循环是否继续运行的标记，0表示停止，1表示运行
+extern int       g_paused;//游戏是否暂停的标记，0表示未暂停，1表示已暂停
+extern int       g_bird_color;//当前小鸟的颜色索引，0=红色，1=蓝色，2=黄色
+extern int       g_is_night;//当前是否为夜间模式的标记，0=白天，1=夜间
 extern float     g_bg_offset;//当前背景图的水平偏移量
 extern float     g_ground_offset;//当前地面图的水平偏移量
 

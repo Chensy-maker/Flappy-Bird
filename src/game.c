@@ -2,11 +2,13 @@
 #include "physics.h"
 #include "input.h"
 #include "audio.h"
+#include "render.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <SDL2/SDL.h>
 #include <math.h>
+#include <time.h>
 
 GameScene g_scene;//当前游戏场景
 Bird      g_bird;//当前小鸟的状态
@@ -14,7 +16,10 @@ PipeList  g_pipes;//当前所有管道的链表头指针
 int       g_score;//当前游戏分数
 int       g_highscore;//历史最高分
 int       g_countdown;//倒计时计数器，游戏开始前的倒计时
-int       g_running;//游戏主循环是否继续运行的标记，0=不运行，1=运行
+int       g_running;//游戏主循环是否继续运行的标记，0表示停止，1表示运行
+int       g_paused = 0;//游戏是否暂停的标记，0表示未暂停，1表示已暂停
+int       g_bird_color = 0;//当前小鸟的颜色索引，0=红色，1=蓝色，2=黄色
+int       g_is_night = 0;//当前是否为夜间模式的标记，0=白天，1=夜间
 float     g_bg_offset;//当前背景图的水平偏移量
 float     g_ground_offset;//当前地面图的水平偏移量
 SDL_Renderer *g_renderer = NULL;//全局渲染器指针，供其他模块使用
@@ -22,19 +27,26 @@ SDL_Renderer *g_renderer = NULL;//全局渲染器指针，供其他模块使用
 static int pipe_timer = 0;//管道生成计时器
 static int ready_timer = 0;//倒计时计时器
 static int anim_counter = 0;//小鸟动画帧切换计时器
-static float float_t = 0;//小鸟上下浮动的计时器
+static float frame_t = 0;//小鸟上下浮动的计时器
 
 void game_init(void)
 {
-    g_scene = SCENE_START;//初始化游戏场景为开始界面
+    time_t t = time(NULL);//获取当前时间的时间戳
+    struct tm *tm = localtime(&t);//把时间戳转换为本地时间结构体
+    int hour = tm->tm_hour;//获取当前小时数（0-23）
+    g_is_night = (hour >= 19 || hour < 6) ? 1 : 0;//如果当前时间在19点到次日6点之间，则为夜间模式，否则为白天模式
+
+    g_scene = SCENE_START;//初始化游戏场景为开始场景
     g_score = 0;//初始化当前分数为0
     g_pipes = NULL;//初始化管道链表为空
     pipe_timer = 0;//初始化管道生成计时器为0
     ready_timer = 0;//初始化倒计时计时器为0
     anim_counter = 0;//初始化小鸟动画帧切换计时器为0
-    float_t = 0;//初始化小鸟上下浮动的计时器为0
+    frame_t = 0;//初始化小鸟上下浮动的计时器为0
     g_bg_offset = 0.0f;//初始化背景图水平偏移量为0
     g_ground_offset = 0.0f;//初始化地面图水平偏移量为0
+    g_bird_color = 0;//初始化小鸟颜色索引为0（红色）
+    g_paused = 0;//初始化游戏暂停标记为0（未暂停）
 
 void save_highscore(void)
 {
@@ -86,6 +98,7 @@ void game_switch_scene(GameScene s)
 
     if (s == SCENE_READY) {//如果切换到准备场景，重置游戏状态
         g_score = 0;
+        g_paused = 0;
         pipe_timer = 0;
         ready_timer = 0;
         g_bird.y = BIRD_BODY_Y;
@@ -98,6 +111,7 @@ void game_switch_scene(GameScene s)
         g_bird.y = BIRD_BODY_Y;
         g_bird.vy = 0.0f;
         g_bird.frame = 1;
+        g_paused = 0;
         game_free_pipes();
         g_score = 0;
     }
@@ -112,6 +126,8 @@ void game_update(void)
 
         float_t += 0.05f;//更新小鸟上下浮动的计时器
         g_bird.y = BIRD_BODY_Y + (float)sin(float_t) * 5.0f;//根据正弦函数计算小鸟的垂直位置
+        frame_t += 0.05f;
+        g_bird.y = BIRD_BODY_Y + (float)sin(frame_t) * 5.0f;
 
         anim_counter++;//更新小鸟动画帧切换计时器
         if (anim_counter >= 8) {//每8帧切换一次小鸟动画帧
@@ -120,6 +136,18 @@ void game_update(void)
         }
 
         if (input_space_triggered()) {//如果空格键刚刚按下，切换到准备场景
+            audio_play_swoosh();//播放切换场景音效
+            game_switch_scene(SCENE_READY);//切换到准备场景
+        if (input_left_triggered()) {//如果左方向键刚刚按下，切换小鸟颜色
+            g_bird_color = (g_bird_color + 2) % 3;//循环切换小鸟颜色，0→2→1→0
+            audio_play_swoosh();//播放切换小鸟颜色的音效
+        }
+        if (input_right_triggered()) {//如果右方向键刚刚按下，切换小鸟颜色
+            g_bird_color = (g_bird_color + 1) % 3;//循环切换小鸟颜色，0→1→2→0
+            audio_play_swoosh();//播放切换小鸟颜色的音效
+        }
+
+        if (input_click_triggered()) {//如果鼠标左键刚刚点击，切换到准备场景
             audio_play_swoosh();//播放切换场景音效
             game_switch_scene(SCENE_READY);//切换到准备场景
         }
