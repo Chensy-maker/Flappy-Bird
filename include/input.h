@@ -1,23 +1,19 @@
-#ifndef INPUT_H//防止这个头文件被多个地方 #include 时重复包含，报重定义编译错误
-#define INPUT_H//如果上一行判断成立（没定义过），立刻定义 INPUT_H 宏
+#ifndef INPUT_H
+#define INPUT_H
 
-#include <SDL2/SDL.h>//引入 SDL2 图形库的主头文件
-#include <stdbool.h>//C99 标准头文件，提供布尔类型
+#include <SDL2/SDL.h>
+#include <stdbool.h>
 
-void input_process_events(void);//处理所有 SDL 输入事件的主函数
-bool input_space_pressed(void);//查询空格键当前是否持续按住
-bool input_space_triggered(void);//查询空格键是否刚刚按下
-bool input_quit_requested(void);//查询是否收到退出游戏的请求
-void input_process_events(void);//处理所有 SDL 输入事件的主函数
-bool input_space_pressed(void);//查询空格键当前是否持续按住
-bool input_space_triggered(void);//查询空格键是否刚刚按下
-bool input_click_triggered(void);//查询鼠标左键是否刚刚按下
-bool input_left_triggered(void);//查询左方向键是否刚刚按下
-bool input_right_triggered(void);//查询右方向键是否刚刚按下
-bool input_pause_triggered(void);//查询暂停键（P 或 Pause）是否刚刚按下
-bool input_quit_requested(void);//查询是否收到退出游戏的请求
+void input_process_events(void);//处理SDL事件队列，更新按键状态
+bool input_space_pressed(void);//空格键是否按下
+bool input_space_triggered(void);//空格键是否刚刚按下（从未按下到按下的瞬间）
+bool input_click_triggered(void);//鼠标左键是否刚刚点击（从未按下到按下的瞬间）
+bool input_left_triggered(void);//左方向键是否刚刚按下（从未按下到按下的瞬间）
+bool input_right_triggered(void);//右方向键是否刚刚按下（从未按下到按下的瞬间）
+bool input_pause_triggered(void);//暂停键（P键或Pause键）是否刚刚按下（从未按下到按下的瞬间）
+bool input_quit_requested(void);//是否请求退出游戏（点击窗口关闭按钮或按下ESC键）
 
-extern int click_x;//鼠标点击的 X 坐标
-extern int click_y;//鼠标点击的 Y 坐标
+extern int click_x;//鼠标点击的x坐标
+extern int click_y;//鼠标点击的y坐标
 
 #endif
